@@ -12,5 +12,4 @@ public class Settings
     public required string OutputDirectory { get; set; }
     public required string SqlConnectionString { get; set; }
     public required int DaysBeforeStartCreateAccount { get; set; }
-    public required string WebApp { get; set; }
 }

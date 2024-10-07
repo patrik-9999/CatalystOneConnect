@@ -31,24 +31,43 @@ public class Program
 
         Log.Information("Hämtar konton från CatalystOne...");
         var catalyst = await CatalystAPI.CreateAsync(
-            CredsDir: settings.CredentialsDir,
+            credsDir: settings.CredentialsDir,
             OnProgressListener: delegate (String message)
             {
                 Log.Information(message);
             },
-            UseCache: true);
+            useCache: true);
 
-        var res = await catalyst.GetModifiedAsync(DateTime.Now.AddDays(-daysBeforeStartCreateAccount));
+        //var res = await catalyst.GetModifiedAsync(DateTime.Now.AddDays(-daysBeforeStartCreateAccount));
+        var res = await catalyst.GetEmployeesAsync();
         if (res is null || res.employees is null)
+        {
+            Log.Error("Tomt svar från catalyst.GetEmployeesAsync()");
+        }
+        else
+        {
+            Log.Information("Konton från CatalystOne: {count}", res.employees.Count);
+            foreach (var employee in res.employees.Take(10))
+            {
+                Log.Information("Konto: {name} {email}", employee?.name, employee?.field?._7?.data?.value);
+            }
+        }
+
+        var orgs = await catalyst.GetOrgAsync();
+        if (orgs is null || orgs.organizations is null)
         {
             Log.Error("Tomt svar från catalyst.GetEmployeesAsync()");
             return;
         }
-        Log.Information("Konton från CatalystOne: {count}", res.employees.Count);
-        foreach (var employee in res.employees.Take(10))
+        else
         {
-            Log.Information("Konto: {name} {email}", employee?.name, employee?.field?._7?.data?.value);
+            Log.Information("Organisationer från CatalystOne: {count}", orgs.organizations.Count);
+            foreach (var org in orgs.organizations.Take(10))
+            {
+                Log.Information("Organization: {name}", org?.field?._400?.data?.value);
+            }
         }
+
     }
 }
 

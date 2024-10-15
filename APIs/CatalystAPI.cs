@@ -20,6 +20,7 @@ public class CatalystAPI
     public readonly string AccessTokenUrl;
     public readonly string EmployeesUrl;
     public readonly string OrgsUrl;
+    public readonly string PatchEmployeeUrl;
     private string WebApp { get; }
     private string ClientId { get; }
     private string ClientSecret { get; }
@@ -30,6 +31,7 @@ public class CatalystAPI
     static readonly string EmployeesUrlTemplate = "https://{0}.catalystone.com/mono/api/employees?fullObject=true";
     static readonly string OrgsUrlTemplate = "https://{0}.catalystone.com/mono/api/organizations";
     static readonly string ModifiedSinceUrlTemplate = "https://{0}.catalystone.com/mono/api/employees?fullObject=true&includeInactive=true&modifiedSince={1}";
+    static readonly string PatchEmployeeTemplate = "https://{0}.catalystone.com/mono/api/employees";
 
     private CatalystAPI(string credsDir, Action<string>? OnProgressListener = null, bool useCache=true)
     {
@@ -42,9 +44,8 @@ public class CatalystAPI
         UseCache = useCache;
         AccessTokenUrl = string.Format(AccessTokenUrlTemplate, WebApp);
         EmployeesUrl = string.Format(EmployeesUrlTemplate, WebApp);
-        //ModifiedSinceUrl = string.Format(ModifiedSinceUrlTemplate, WebApp);
         OrgsUrl = string.Format(OrgsUrlTemplate, WebApp);
-
+        PatchEmployeeUrl = string.Format(PatchEmployeeTemplate, WebApp);
         ClientAccess.DefaultRequestHeaders.Add("accept", "application/json");
         ClientAccess.DefaultRequestHeaders.Add("Api-Version", "v3");
         ClientAccess.DefaultRequestHeaders.Add("Grant-Type", "client_credentials");
@@ -75,7 +76,7 @@ public class CatalystAPI
     }
 
 
-    // Updates CatalystOne with the given values for the employee with the given guid and profileGuid.
+    // Updates CatalystOne
     public async Task<bool> SetEmployeeSG(string guid, string profileGuid, string schoolsoftUsername, string schoolsoftPassword,
                                           string googleUsername, string googlePassword)
     {
@@ -148,9 +149,6 @@ public class CatalystAPI
             OnProgress?.Invoke(modifiedSinceUrl);
             string responseBody = await Client.GetStringAsync(modifiedSinceUrl);
 
-            //File.WriteAllText(filename, responseBody);                
-            //OnProgress?.Invoke($"{responseBody}");
-
             using JsonDocument document = JsonDocument.Parse(responseBody);
             var options = new JsonSerializerOptions
             {
@@ -216,6 +214,16 @@ public class CatalystAPI
 
     public async Task<CatalystOrgs?> GetOrgAsync()
     {
+        string cacheFile = Path.Combine(CacheDir, "Orgs.json");
+        if (UseCache && File.Exists(cacheFile))
+        {
+            if (JsonSerializer.Deserialize<CatalystOrgs>(File.ReadAllText(cacheFile)) is CatalystOrgs orgs)
+            {
+                OnProgress?.Invoke("Reading orgs from cache");
+                return orgs;
+            }
+        }
+
         if (Access is null)
         {
             OnProgress?.Invoke("Calling GetOrgAsync() with no accesstoken");
@@ -229,7 +237,6 @@ public class CatalystAPI
             Client.DefaultRequestHeaders.Add("Api-Version", "v3");
             Client.DefaultRequestHeaders.Add("includeSubOrg", "true");
 
-            string filename = Path.Combine(CacheDir, "Orgs.json");
             string responseBody = await Client.GetStringAsync(OrgsUrl);
             File.WriteAllText("temp.txt", responseBody);                
             //OnProgress?.Invoke($"{responseBody}");
@@ -241,7 +248,7 @@ public class CatalystAPI
                 WriteIndented = true
             };
             var formattedJson = JsonSerializer.Serialize(document, options);
-            File.WriteAllText(filename, formattedJson);
+            File.WriteAllText(cacheFile, formattedJson);
             var orgs = JsonSerializer.Deserialize<CatalystOrgs>(responseBody);
             return orgs;
         }

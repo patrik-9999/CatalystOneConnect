@@ -119,7 +119,7 @@ public class CatalystAPI
                 JsonSerializer.Serialize(employees, options),
                 Encoding.UTF8,
                 new MediaTypeHeaderValue("application/json"));
-            using HttpResponseMessage response = await Client.PatchAsync("https://thorengruppen.catalystone.com/mono/api/employees", jsonContent);
+            using HttpResponseMessage response = await Client.PatchAsync(PatchEmployeeTemplate, jsonContent);
             var jsonResponse = await response.Content.ReadAsStringAsync();
             Console.WriteLine($"{jsonResponse}\n");
             //[15:54:41 INF] SetEmployeeSG()

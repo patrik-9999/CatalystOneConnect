@@ -10,4 +10,3 @@ Open the solution in Visual Studio and run the project.
 
 # Additional Information
 The classes CatalystEmployyes.cs and CatalystOrgs.cs contains fields that are customized for a specific installation of CatalystOne and will probaly not be present in other installations.
-All fields not present in the data from CatalystOne are set to null. 
